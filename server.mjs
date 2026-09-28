@@ -7,6 +7,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { complete, MODEL } from "./lib/ollama.mjs";
 import { runLocalAgent } from "./lib/agent.mjs";
+import { logSavings, categorize } from "./lib/costlog.mjs";
 
 const execFileAsync = promisify(execFile);
 
@@ -24,8 +25,9 @@ server.registerTool(
     },
   },
   async ({ prompt, system }) => {
-    const answer = await complete(prompt, { system });
-    return { content: [{ type: "text", text: answer }] };
+    const { text, promptTokens, completionTokens } = await complete(prompt, { system });
+    await logSavings({ tool: "ask_local", category: categorize("ask_local"), detail: prompt, promptTokens, completionTokens });
+    return { content: [{ type: "text", text }] };
   }
 );
 
@@ -46,10 +48,11 @@ server.registerTool(
     const prompt = question
       ? `Here is the content of ${abs}:\n\n${content}\n\n---\nAnswer this about the file: ${question}`
       : `Summarize the following file (${abs}) concisely, covering its purpose and key structure:\n\n${content}`;
-    const answer = await complete(prompt, {
+    const { text, promptTokens, completionTokens } = await complete(prompt, {
       system: "You are a careful code/document summarizer. Be concise and factual.",
     });
-    return { content: [{ type: "text", text: answer }] };
+    await logSavings({ tool: "summarize_file", category: categorize("summarize_file"), detail: abs, promptTokens, completionTokens });
+    return { content: [{ type: "text", text }] };
   }
 );
 
@@ -84,10 +87,11 @@ server.registerTool(
     const prompt = `These are ripgrep matches for pattern "${pattern}" in ${searchDir}:\n\n${matches.slice(0, 20000)}\n\n---\n${
       question || "Summarize where/how this is used and anything notable."
     }`;
-    const answer = await complete(prompt, {
+    const { text, promptTokens, completionTokens } = await complete(prompt, {
       system: "You are a careful code analyst. Reference file:line when relevant. Be concise.",
     });
-    return { content: [{ type: "text", text: answer }] };
+    await logSavings({ tool: "search_explain", category: categorize("search_explain"), detail: `"${pattern}" in ${searchDir}`, promptTokens, completionTokens });
+    return { content: [{ type: "text", text }] };
   }
 );
 
@@ -115,6 +119,14 @@ server.registerTool(
       cwd: abs,
       maxSteps: max_steps ?? 25,
       maxMs: (max_minutes ?? 10) * 60 * 1000,
+    });
+    await logSavings({
+      tool: "local_agent_run",
+      category: categorize("local_agent_run", task),
+      detail: task,
+      promptTokens: result.promptTokens,
+      completionTokens: result.completionTokens,
+      steps: result.steps,
     });
     const summary = [
       `success: ${result.success}`,

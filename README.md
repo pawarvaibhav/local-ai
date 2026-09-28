@@ -61,6 +61,19 @@ The local agent runs real shell commands on your machine, so it's not a toy:
   ground truth. `finish(success=true)` only means the model believes its own
   build/test run passed.
 
+## Savings log
+
+Every call through `ask_local`, `summarize_file`, `search_explain`, and
+`local_agent_run` (from either the MCP tools or the `local-ai` CLI) appends
+a line to `savings.jsonl`: what kind of work it was (category) and an
+estimated Claude cost avoided, derived from the local model's actual token
+counts against Claude Sonnet 5 pricing (`lib/costlog.mjs`) — approximate,
+not a billing record.
+
+- `local-ai savings` — terminal summary (total calls, est. $ saved, by category).
+- `npm run build:page` — regenerates `docs/index.html`, a static dashboard
+  of the same numbers, served via GitHub Pages from `/docs` on `main`.
+
 ## Swapping the model
 
 ```
