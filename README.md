@@ -74,6 +74,14 @@ not a billing record.
 - `npm run build:page` — regenerates `docs/index.html`, a static dashboard
   of the same numbers, served via GitHub Pages from `/docs` on `main`.
 
+**Privacy:** `savings.jsonl` is git-ignored and never leaves this machine —
+it holds raw task text, file paths, and search patterns, which can reveal
+what you're actually working on. Only `docs/index.html` is committed, and
+it renders category totals and dollar amounts only (see
+`scripts/build-savings-page.mjs`) — never the per-entry `detail` field, a
+file path, or anything else that could be traced back to a specific
+project or this device.
+
 ## Swapping the model
 
 ```

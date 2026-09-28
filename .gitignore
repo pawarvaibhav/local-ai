@@ -1,3 +1,9 @@
 node_modules/
 *.log
 .ollama.pid
+
+# Raw per-call log: task text, file paths, search patterns — can reveal
+# what you're actually working on and this machine's directory layout.
+# Never committed. Only the aggregated, detail-free docs/index.html is
+# published (see lib/costlog.mjs / scripts/build-savings-page.mjs).
+savings.jsonl
