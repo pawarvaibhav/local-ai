@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>local-ai capabilities</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1a1a; --muted: #6b7280; --accent: #2563eb;
+    --border: #e5e7eb; --bar-bg: #eef2ff; --good: #16a34a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #0b0f19; --fg: #e5e7eb; --muted: #9ca3af; --accent: #60a5fa; --border: #1f2937; --bar-bg: #1e293b; --good: #4ade80; }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 32px 16px; background: var(--bg); color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  main { max-width: 760px; margin: 0 auto; }
+  nav { margin-bottom: 20px; font-size: 0.85rem; }
+  nav a { color: var(--muted); text-decoration: none; margin-right: 16px; }
+  nav a.active { color: var(--fg); font-weight: 600; }
+  nav a:hover { color: var(--accent); }
+  h1 { font-size: 1.4rem; margin: 0 0 4px; }
+  h2 { font-size: 1.05rem; margin: 32px 0 4px; }
+  .sub { color: var(--muted); font-size: 0.9rem; margin: 0 0 8px; }
+  .note { color: var(--muted); font-size: 0.82rem; margin: 0 0 24px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin-bottom: 8px; }
+  th { text-align: left; color: var(--muted); font-weight: 500; font-size: 0.78rem; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+  td { padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  td.src { color: var(--muted); font-size: 0.78rem; white-space: nowrap; }
+  code { background: var(--bar-bg); border-radius: 4px; padding: 1px 5px; font-size: 0.85em; }
+  .tag { display: inline-block; font-size: 0.7rem; font-weight: 600; color: var(--good); border: 1px solid var(--good); border-radius: 999px; padding: 1px 8px; margin-left: 6px; }
+  footer { margin-top: 28px; color: var(--muted); font-size: 0.78rem; }
+</style>
+</head>
+<body>
+<main>
+  <nav>
+    <a href="index.html">Savings</a>
+    <a href="capabilities.html" class="active">Capabilities</a>
+  </nav>
+
+  <h1>What the base model could do vs. what this harness adds</h1>
+  <p class="sub">The local model is <code>qwen3-coder:30b</code> served by Ollama. We haven't fine-tuned or retrained its weights — everything below "added by local-ai" is tool/scaffolding code in this repo that wraps the same stock model.</p>
+  <p class="note">Source of truth: <code>lib/ollama.mjs</code>, <code>lib/agent.mjs</code>, <code>lib/tools.mjs</code>, <code>server.mjs</code> in this repo.</p>
+
+  <h2>Out of the box (Ollama + qwen3-coder:30b, no scaffolding)</h2>
+  <table>
+    <thead><tr><th>Capability</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Chat / instruction following</td><td>Standard conversational completion over an HTTP API on <code>localhost:11434</code>.</td></tr>
+      <tr><td>Code generation, explanation, refactoring suggestions</td><td>As text only — it can <em>write</em> a diff or a command, not run one.</td></tr>
+      <tr><td>Structured tool-call output</td><td>Given a JSON tool schema, it can emit a <code>tool_calls</code> request — but nothing executes it. That's a model-level feature this project relies on, not something we added.</td></tr>
+      <tr><td>Single-turn context</td><td>No memory across sessions beyond whatever is replayed in the message list.</td></tr>
+      <tr><td>File system / shell / network access</td><td>None. A fresh <code>ollama run</code> cannot read a file, run a command, or start a server.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Added by local-ai's harness</h2>
+  <table>
+    <thead><tr><th>Capability</th><th>Notes</th><th class="src">Where</th></tr></thead>
+    <tbody>
+      <tr><td>Sandboxed file read/write</td><td>Paths resolved and hard-checked against a <code>cwd</code> root; can't escape it.</td><td class="src">lib/tools.mjs</td></tr>
+      <tr><td>Sandboxed shell execution</td><td>Runs real build/test/lint commands with a 120s timeout and a blocklist for destructive patterns (<code>sudo</code>, force-push, <code>rm -rf /</code>, fork bombs, …).</td><td class="src">lib/tools.mjs</td></tr>
+      <tr><td>Agentic loop</td><td>Feeds tool results back to the model turn after turn, under a step/time budget, until it calls <code>finish</code>.</td><td class="src">lib/agent.mjs</td></tr>
+      <tr><td>Git/publish safety rules</td><td>System prompt requires a read-only check before and after any mutating git command, and bans all force operations outright.</td><td class="src">lib/agent.mjs</td></tr>
+      <tr><td>Background processes <span class="tag">new</span></td><td><code>start_background</code> launches a detached process (e.g. a dev server) instead of blocking like <code>run_shell</code> would; <code>check_process</code> / <code>list_processes</code> poll it; <code>stop_process</code> ends it. Anything still running is force-stopped when the task ends.</td><td class="src">lib/tools.mjs</td></tr>
+      <tr><td>Local page/service verification <span class="tag">new</span></td><td><code>fetch_url</code> actually GETs a URL to confirm a page renders or an endpoint responds, before the agent is allowed to report success — restricted to <code>localhost</code>/<code>127.0.0.1</code> so it can't be used to reach the outside network.</td><td class="src">lib/tools.mjs</td></tr>
+      <tr><td>Cost/savings accounting</td><td>Logs local token counts per call and estimates the Claude spend avoided.</td><td class="src">lib/costlog.mjs</td></tr>
+      <tr><td>MCP + CLI surface</td><td>Exposes all of the above to Claude Code as MCP tools, and standalone from a terminal.</td><td class="src">server.mjs, cli.mjs</td></tr>
+    </tbody>
+  </table>
+
+  <footer>This page is handwritten documentation, not generated from <code>savings.jsonl</code> — update it in <code>docs/capabilities.html</code> when the tool surface changes.</footer>
+</main>
+</body>
+</html>

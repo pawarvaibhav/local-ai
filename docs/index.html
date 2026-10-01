@@ -18,6 +18,10 @@
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   }
   main { max-width: 760px; margin: 0 auto; }
+  nav { margin-bottom: 20px; font-size: 0.85rem; }
+  nav a { color: var(--muted); text-decoration: none; margin-right: 16px; }
+  nav a.active { color: var(--fg); font-weight: 600; }
+  nav a:hover { color: var(--accent); }
   h1 { font-size: 1.4rem; margin: 0 0 4px; }
   .sub { color: var(--muted); font-size: 0.9rem; margin: 0 0 28px; }
   .stats { display: flex; gap: 16px; margin-bottom: 32px; flex-wrap: wrap; }
@@ -37,32 +41,48 @@
 </head>
 <body>
 <main>
+  <nav>
+    <a href="index.html" class="active">Savings</a>
+    <a href="capabilities.html">Capabilities</a>
+  </nav>
+
   <h1>local-ai savings</h1>
   <p class="sub">Work delegated from Claude Code to the local Ollama model, and the Claude usage it avoided.</p>
 
   <div class="stats">
     <div class="stat">
       <div class="label">Local calls</div>
-      <div class="value">0</div>
+      <div class="value">10</div>
     </div>
     <div class="stat">
       <div class="label">Est. Claude cost saved</div>
-      <div class="value">$0.0000</div>
+      <div class="value">$1.4770</div>
     </div>
     <div class="stat">
       <div class="label">Since</div>
-      <div class="value" style="font-size:1rem;">—</div>
+      <div class="value" style="font-size:1rem;">2026-09-28</div>
     </div>
   </div>
 
   <table>
     <thead><tr><th>Category</th><th style="text-align:right">Calls</th><th style="text-align:right">Est. cost saved</th><th></th></tr></thead>
     <tbody>
-      <tr><td colspan="4" style="color:var(--muted)">No logged work yet.</td></tr>
+      <tr>
+        <td class="cat">git-operation</td>
+        <td class="num">6</td>
+        <td class="num">$1.2509</td>
+        <td class="bar-cell"><div class="bar" style="width:100.0%"></div></td>
+      </tr>
+<tr>
+        <td class="cat">docker-operation</td>
+        <td class="num">4</td>
+        <td class="num">$0.2260</td>
+        <td class="bar-cell"><div class="bar" style="width:18.1%"></div></td>
+      </tr>
     </tbody>
   </table>
 
-  <footer>Estimated against Claude Sonnet 5 pricing ($2/$10 per MTok in/out) using local token counts as a proxy — approximate, not a billing record. Generated 2026-09-28T16:51:40.858Z.</footer>
+  <footer>Estimated against Claude Sonnet 5 pricing ($2/$10 per MTok in/out) using local token counts as a proxy — approximate, not a billing record. Generated 2026-10-01T14:01:18.611Z.</footer>
 </main>
 </body>
 </html>

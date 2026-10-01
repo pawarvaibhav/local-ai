@@ -30,7 +30,9 @@ subscription's tokens on it.
     **autonomous agent**: it reads/writes files and runs shell commands
     (build/test/lint) inside a sandboxed `cwd`, iterating until it actually
     validates the result or gives up. This is the one that does real
-    build/deploy/test/validate loops locally.
+    build/deploy/test/validate loops locally. It can also start a dev
+    server/service in the background, poll it, and GET a local URL to
+    confirm a page actually renders before reporting success (see below).
   - `local_ai_status` — check Ollama/model reachability.
 - **`cli.mjs`** — same capabilities from your terminal, via the `local-ai`
   shell function added to `~/.zshrc`:
@@ -54,6 +56,16 @@ The local agent runs real shell commands on your machine, so it's not a toy:
   force-push, `dd` to a device, fork bombs, etc.) — but this is a floor, not
   a guarantee. It can still run `npm install`, hit the network, modify git
   history within the repo, etc.
+- **Servers/dev pages** go through a separate `start_background` tool
+  (detached child process + log file) instead of the blocking `run_shell`,
+  so the agent can launch something like `npm run dev` without hanging
+  until the 120s timeout. It checks on it with `check_process`/
+  `list_processes` and verifies it by actually GETing it with `fetch_url`
+  — which is hard-restricted to `localhost`/`127.0.0.1`, so the agent can't
+  use it to reach the outside network. Every background process a run
+  starts is force-stopped (`SIGTERM`) when that run ends, whether it
+  finished, timed out, or errored, so nothing is left running on your Mac
+  between tasks.
 - Each run is capped at 25 steps / 10 minutes by default (override via
   `max_steps` / `max_minutes` in the MCP call).
 - **Point it at a scratch/dev directory or a repo you have clean commits in**,

@@ -52,6 +52,10 @@ async function main() {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   }
   main { max-width: 760px; margin: 0 auto; }
+  nav { margin-bottom: 20px; font-size: 0.85rem; }
+  nav a { color: var(--muted); text-decoration: none; margin-right: 16px; }
+  nav a.active { color: var(--fg); font-weight: 600; }
+  nav a:hover { color: var(--accent); }
   h1 { font-size: 1.4rem; margin: 0 0 4px; }
   .sub { color: var(--muted); font-size: 0.9rem; margin: 0 0 28px; }
   .stats { display: flex; gap: 16px; margin-bottom: 32px; flex-wrap: wrap; }
@@ -71,6 +75,11 @@ async function main() {
 </head>
 <body>
 <main>
+  <nav>
+    <a href="index.html" class="active">Savings</a>
+    <a href="capabilities.html">Capabilities</a>
+  </nav>
+
   <h1>local-ai savings</h1>
   <p class="sub">Work delegated from Claude Code to the local Ollama model, and the Claude usage it avoided.</p>
 
